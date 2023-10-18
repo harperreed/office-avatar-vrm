@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>VRM Viewer</title>
+  <style>
+    body{
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Your code here
+      const Viewer = await import("/static/js/features/vrmViewer/viewer.js").then(m => m.Viewer);
+      window.viewer = new Viewer();
+
+      const canvas = document.createElement("canvas");
+      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+      document.body.appendChild(canvas);
+      canvas.style.cssText = "width:100vw; height:100vh; display:block;";
+      document.body.style.cssText = "margin:0; padding:0;";
+
+      viewer.setup(canvas);
+
+      
+      // await viewer.loadVrm("https://raw.githubusercontent.com/josephrocca/ChatVRM-js/main/avatars/6246813290354663411.vrm");
+      // await viewer.loadVrm("https://raw.githubusercontent.com/josephrocca/ChatVRM-js/main/avatars/5575583359519712199.vrm");
+
+      
+      // await viewer.loadVrm("{{ url_for('static', filename='vrm/Person Game Builder Garage.vrm') }}");
+      await viewer.loadVrm("{{ url_for('static', filename='vrm/8051272356493158080.vrm') }}");
+      
+
+      viewer.model.emoteController.playEmotion("neutral");
+
+      // Create Socket.IO connection
+      var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+
+      // Initial emotion state
+      socket.emit('emotion', 'neutral');
+
+      // Listen for messages from server
+      socket.on('set_emotion', function (message) {
+        console.log('Received message' + JSON.stringify(message))
+        const receivedEmotion = message.emotion;
+        viewer.model.emoteController.playEmotion(receivedEmotion);
+      });
+
+      // Existing setup and WebSocket code...
+      socket.on('set_animation', function (message) {
+        console.log('Received message' + JSON.stringify(message))
+        const receivedAnimation = message.animation;
+        const animationPath = "/static/animations/"
+        viewer.model.loadAnimation(`${animationPath}${receivedAnimation}.fbx`);
+      });
+
+      socket.on('set_audio', function (message) {
+        console.log('Received message' + JSON.stringify(message))
+        const audio_url = message.audio_url;
+        const volume = 1;
+        const expression = "speaking";
+        const speakingConfig = { expression: expression, volume: volume };
+
+        if (audio_url) {
+          fetch(audio_url).then(r => r.arrayBuffer()).then(arrayBuffer => {
+
+            viewer.model.speak(arrayBuffer, speakingConfig);
+          });
+        }
+      });
+
+      socket.on('state_reset', function (data) {
+        // Your logic here to reset to neutral
+        viewer.model.emoteController.playEmotion(data.emotion);
+        // Reset animation based on data.animation, if necessary
+      });
+
+
+      // await viewer.model.loadAnimation("https://cdn.jsdelivr.net/gh/josephrocca/ChatVRM-js@v0.0.28/OpenCharacters/animations/angry.fbx");
+      // await viewer.model.loadAnimation("/static/animations/walking.fbx");
+
+      if (!navigator.userActivation?.hasBeenActive) {
+        await new Promise(resolve => window.addEventListener("click", resolve, { once: true }));
+      }
+
+      // let arrayBuffer = await fetch("https://cdn.jsdelivr.net/gh/josephrocca/ChatVRM-js@v0.0.22/OpenCharacters/dummy-audio/3.mp3").then(r => r.arrayBuffer());
+      // await viewer.model.speak(arrayBuffer, {expression:"happy", volume:10});
+    });
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+</body>
+
+</html>
