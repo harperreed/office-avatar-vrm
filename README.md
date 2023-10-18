@@ -1,6 +1,6 @@
-# Anime Neko Girl Office Avatar Web App
+# Anime Neko Girl Web App
 
-This web application allows you to control an animated Neko Girl avatar using APIs, MQTT, and WebSockets.
+This web application allows you to control an animated Neko Girl avatar using APIs, MQTT, and WebSockets. The application is designed to be integrated with notification systems like Home Assistant.
 
 ## Features
 
@@ -9,6 +9,10 @@ This web application allows you to control an animated Neko Girl avatar using AP
 - Integrate with other services through MQTT
 - Automatic state reset after a period of inactivity
 - Dockerized for easy deployment
+
+## Dependencies
+
+- Uses [ChatVRM-js](https://github.com/josephrocca/ChatVRM-js), a JavaScript conversion/adaptation of parts of the ChatVRM (TypeScript), for the VRM viewer features.
 
 ## Requirements
 
@@ -64,10 +68,16 @@ Run the app:
 python main.py
 ```
 
+## Integrations
+
+- Designed for compatibility with notification systems like Home Assistant.
+
 ## License
 
 This project is licensed under the MIT License.
 
 ---
 
-Feel free to add or modify sections according to your project's needs.
+Feel free to adjust the README as necessary!
+
+
