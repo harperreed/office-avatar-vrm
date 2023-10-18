@@ -20,8 +20,8 @@ This web application allows you to control an animated Neko Girl avatar using AP
 ### Clone the Repository
 
 ```bash
-git clone <repository_url>
-cd <repository_folder>
+git clone https://github.com/harperreed/office-avatar-vrm
+cd office-avatar-vrm
 ```
 
 ### Set up Environment Variables
@@ -43,8 +43,8 @@ Your application will be available at `http://localhost:5000`.
 
 ### MQTT Topics
 
-- Emotion: `/avatar/emotion`
-- Animation: `/avatar/animation`
+- Emotion: `avatar/emotion`
+- Animation: `avatar/animation`
 
 ## Development
 
