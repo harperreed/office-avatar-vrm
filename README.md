@@ -1,4 +1,5 @@
-# Anime Neko Girl Web App
+# Office Avatar (using VRM files)
+![image](https://github.com/harperreed/office-avatar-vrm/assets/18504/acdcd1ac-eb71-458c-8369-78900208920a)
 
 This web application allows you to control an animated Neko Girl avatar using APIs, MQTT, and WebSockets. The application is designed to be integrated with notification systems like Home Assistant.
 
