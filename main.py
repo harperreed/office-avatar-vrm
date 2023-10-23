@@ -23,8 +23,11 @@ def reset_to_neutral():
 def emit_state_change(event_name, data):
     logger.info(f"Emitted {event_name} with data {data}")
     socketio.emit(event_name, data)
-    key, value = next(iter(data.items()))
-    client.publish(f"avatar/{key}/state", value)
+    try:
+        key, value = next(iter(data.items()))
+        client.publish(f"avatar/{key}/state", value)
+    except:
+        pass
 
 neko_state_machine.emit = emit_state_change
 neko_state_machine.reset_to_neutral = reset_to_neutral
@@ -58,6 +61,8 @@ def on_message(client, userdata, msg):
         neko_state_machine.set_audio(payload)
         # Your logic for handling audio
         pass
+    elif topic == 'reload':
+        emit_state_change("reload_page", {})
 
 client.on_connect = on_connect
 client.on_message = on_message
@@ -69,6 +74,7 @@ client.loop_start()
 @app.route('/')
 def index():
     logger.info("Serving index.html")
+    # neko_state_machine.set_audio("/static/mp3/dearbaby.mp3")
     return render_template('index.html')
 
 @app.route('/api/emotion', methods=['POST'])
@@ -87,6 +93,11 @@ def set_animation():
 def set_audio():
     audio_url = request.json.get('audio_url')
     neko_state_machine.set_audio(audio_url)
+    return jsonify({"status": "success"}), 200
+
+@app.route('/api/reload', methods=['POST'])
+def reload_avatar():
+    emit_state_change("reload_page", {})
     return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
