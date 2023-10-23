@@ -4,7 +4,7 @@
 <head>
   <title>VRM Viewer</title>
   <style>
-    body{
+    body {
       margin: 0;
       padding: 0;
       background: #000;
@@ -28,13 +28,13 @@
 
       viewer.setup(canvas);
 
-      
+
       // await viewer.loadVrm("https://raw.githubusercontent.com/josephrocca/ChatVRM-js/main/avatars/6246813290354663411.vrm");
       // await viewer.loadVrm("https://raw.githubusercontent.com/josephrocca/ChatVRM-js/main/avatars/5575583359519712199.vrm");
 
-      
+
       // await viewer.loadVrm("{{ url_for('static', filename='vrm/Person Game Builder Garage.vrm') }}");
-      await viewer.loadVrm("{{ url_for('static', filename='vrm/8051272356493158080.vrm') }}");
+      await viewer.loadVrm("{{ url_for('static', filename='vrm/AvatarSample_B.vrm') }}");
       
 
       viewer.model.emoteController.playEmotion("neutral");
@@ -45,6 +45,7 @@
 
       // Initial emotion state
       socket.emit('emotion', 'neutral');
+
 
       // Listen for messages from server
       socket.on('set_emotion', function (message) {
@@ -64,8 +65,8 @@
       socket.on('set_audio', function (message) {
         console.log('Received message' + JSON.stringify(message))
         const audio_url = message.audio_url;
-        const volume = 1;
-        const expression = "speaking";
+        const volume = 5;
+        const expression = "happy";
         const speakingConfig = { expression: expression, volume: volume };
 
         if (audio_url) {
@@ -81,6 +82,12 @@
         viewer.model.emoteController.playEmotion(data.emotion);
         // Reset animation based on data.animation, if necessary
       });
+
+      socket.on('reload_page', function () {
+        location.reload();
+      });
+
+
 
 
       // await viewer.model.loadAnimation("https://cdn.jsdelivr.net/gh/josephrocca/ChatVRM-js@v0.0.28/OpenCharacters/animations/angry.fbx");
