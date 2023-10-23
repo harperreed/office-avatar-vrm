@@ -26,8 +26,8 @@ def emit_state_change(event_name, data):
     try:
         key, value = next(iter(data.items()))
         client.publish(f"avatar/{key}/state", value)
-    except:
-        pass
+    except Exception as e:  # Specify the type of exception
+        logger.error(f"Exception: {e}")
 
 neko_state_machine.emit = emit_state_change
 neko_state_machine.reset_to_neutral = reset_to_neutral
@@ -36,16 +36,22 @@ neko_state_machine.reset_to_neutral = reset_to_neutral
 app = Flask(__name__, static_folder='static')
 socketio = SocketIO(app)
 
+DEBUG = os.getenv("DEBUG", False)
+
+WEB_ADDRESS = os.getenv("WEB_ADDRESS", "0.0.0.0")
+WEB_PORT = os.getenv("WEB_PORT", "8765")
+
 # MQTT setup
 MQTT_BROKER = os.getenv("MQTT_BROKER")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
+MQTT_TOPIC = os.getenv("MQTT_TOPIC", "avatar/#")
 
 client = mqtt.Client("NekoGirlFlask")
 
 #MQTT Magic
 def on_connect(client, userdata, flags, rc):
     logger.info(f"Connected to MQTT broker with result code {rc}")
-    client.subscribe("avatar/#")
+    client.subscribe(MQTT_TOPIC)
 
 def on_message(client, userdata, msg):
     topic = msg.topic.split('/')[-1]
@@ -54,14 +60,18 @@ def on_message(client, userdata, msg):
     logger.info(f"Received message on topic {topic} with payload {payload}")
     
     if topic == 'emotion':
+        logger.debug(f"MQTT: Setting emotion to {payload}")
         neko_state_machine.set_emotion(Emotion(payload))
     elif topic == 'animation':
+        logger.debug(f"MQTT: Setting animation to {payload}")
         neko_state_machine.set_animation(Animation(payload))
     elif topic == 'audio':
+        logger.debug(f"MQTT: Setting audio to {payload}")
         neko_state_machine.set_audio(payload)
         # Your logic for handling audio
         pass
     elif topic == 'reload':
+        logger.debug(f"MQTT: Reloading page")
         emit_state_change("reload_page", {})
 
 client.on_connect = on_connect
@@ -79,27 +89,46 @@ def index():
 
 @app.route('/api/emotion', methods=['POST'])
 def set_emotion():
+    if not request.is_json:
+        return jsonify({"status": "failure", "reason": "Expecting JSON"}), 400
+    logger.debug(f"API: Setting emotion to {request.json.get('emotion')}")
     emotion = request.json.get('emotion')
+    if emotion is None:
+        return jsonify({"status": "failure", "reason": "Missing 'emotion'"}), 400
     neko_state_machine.set_emotion(Emotion(emotion))
     return jsonify({"status": "success"}), 200
 
 @app.route('/api/animation', methods=['POST'])
 def set_animation():
+    if not request.is_json:
+        return jsonify({"status": "failure", "reason": "Expecting JSON"}), 400
+    logger.debug(f"API: Setting animation to {request.json.get('animation')}")
     animation = request.json.get('animation')
+    if animation is None:
+        return jsonify({"status": "failure", "reason": "Missing 'animation'"}), 400
+    
     neko_state_machine.set_animation(Animation(animation))
     return jsonify({"status": "success"}), 200
 
 @app.route('/api/audio', methods=['POST'])
 def set_audio():
+    if not request.is_json:
+        return jsonify({"status": "failure", "reason": "Expecting JSON"}), 400
+    logger.debug(f"API: Setting audio to {request.json.get('audio_url')}")
     audio_url = request.json.get('audio_url')
+    if audio_url is None:
+        return jsonify({"status": "failure", "reason": "Missing 'audio_url'"}), 400
     neko_state_machine.set_audio(audio_url)
     return jsonify({"status": "success"}), 200
 
 @app.route('/api/reload', methods=['POST'])
 def reload_avatar():
+    if not request.is_json:
+        return jsonify({"status": "failure", "reason": "Expecting JSON"}), 400
+    logger.debug(f"API: Reloading page")
     emit_state_change("reload_page", {})
     return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     # app.run(debug=True)\
-    socketio.run(app, host='0.0.0.0', port=8765, debug=True)
+    socketio.run(app, host=WEB_ADDRESS, port=WEB_PORT, debug=DEBUG)
