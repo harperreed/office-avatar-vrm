@@ -78,6 +78,12 @@ export class Model {
       }
     }
     const action = mixer.clipAction(clip);
+    this.mixer.stopAllAction()
+
+    // action.reset();
+
+
+
     action.play();
   }
 
