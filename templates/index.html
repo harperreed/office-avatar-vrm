@@ -65,7 +65,7 @@
       socket.on('set_audio', function (message) {
         console.log('Received message' + JSON.stringify(message))
         const audio_url = message.audio_url;
-        const volume = 5;
+        const volume = 4;
         const expression = "happy";
         const speakingConfig = { expression: expression, volume: volume };
 
