@@ -1,6 +1,5 @@
 import threading
 from enum import Enum
-from flask_socketio import emit
 import structlog
 
 

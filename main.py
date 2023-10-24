@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask import Flask, render_template, request, jsonify
+import threading
 from flask_socketio import SocketIO, emit
 from NekoGirlStateMachine import NekoGirlStateMachine, Emotion, Animation
 import structlog
+import uuid
 import os
+import json
+import time
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 
@@ -46,12 +50,27 @@ MQTT_BROKER = os.getenv("MQTT_BROKER")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "avatar/#")
 
-client = mqtt.Client("NekoGirlFlask")
+machine_id = uuid.UUID(int=uuid.getnode()).hex[-12:]
+
+# client = mqtt.Client(client_id=f"NekoGirlFlask-{machine_id}")
+client = mqtt.Client()
+client.enable_logger()
 
 #MQTT Magic
 def on_connect(client, userdata, flags, rc):
     logger.info(f"Connected to MQTT broker with result code {rc}")
+    
     client.subscribe(MQTT_TOPIC)
+    
+#MQTT Magic
+def on_disconnect(client, userdata, rc):
+    logger.info(f"Disconnected to MQTT broker with result code {rc}")
+    if rc != 0:
+        logger.warning(f"Unexpected disconnection, attempting to reconnect")
+        time.sleep(5)
+        client.reconnect()
+
+
 
 def on_message(client, userdata, msg):
     topic = msg.topic.split('/')[-1]
@@ -70,15 +89,22 @@ def on_message(client, userdata, msg):
         neko_state_machine.set_audio(payload)
         # Your logic for handling audio
         pass
+    elif topic == 'voice':
+        voice = json.loads(payload)
+        logger.debug(f"MQTT: Setting emotion to {voice['OverallEmotion']}")
+        neko_state_machine.set_emotion(Emotion(voice['OverallEmotion']))
+        logger.debug(f"MQTT: Setting audio to {voice['audio_url']}")
+        neko_state_machine.set_audio(voice['audio_url'])
+        # Your logic for handling audio
     elif topic == 'reload':
         logger.debug(f"MQTT: Reloading page")
         emit_state_change("reload_page", {})
 
 client.on_connect = on_connect
+client.on_disconnect = on_disconnect
 client.on_message = on_message
 
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
-client.loop_start()
+
 #Handle API
 
 @app.route('/')
@@ -130,5 +156,18 @@ def reload_avatar():
     return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
-    # app.run(debug=True)\
+
+    try:
+        logger.info("Starting MQTT thread")
+        
+        rc = client.connect(MQTT_BROKER, MQTT_PORT, 60)
+        if rc == 0:  # Successful connect
+            client.loop_start()
+        else:
+            logger.error(f"Failed to connect with result code {rc}")
+
+        # client.loop_forever()
+    except Exception as e:
+        logger.error(f"Exception in MQTT thread: {e}")
+
     socketio.run(app, host=WEB_ADDRESS, port=WEB_PORT, debug=DEBUG)
