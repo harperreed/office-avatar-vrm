@@ -16,7 +16,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       // Your code here
-      const Viewer = await import("/static/js/features/vrmViewer/viewer.js").then(m => m.Viewer);
+      const Viewer = await import("/js/features/vrmViewer/viewer.js").then(m => m.Viewer);
       window.viewer = new Viewer();
 
       const canvas = document.createElement("canvas");
@@ -28,13 +28,8 @@
 
       viewer.setup(canvas);
 
-
-      // await viewer.loadVrm("https://raw.githubusercontent.com/josephrocca/ChatVRM-js/main/avatars/6246813290354663411.vrm");
-      // await viewer.loadVrm("https://raw.githubusercontent.com/josephrocca/ChatVRM-js/main/avatars/5575583359519712199.vrm");
-
-
-      // await viewer.loadVrm("{{ url_for('static', filename='vrm/Person Game Builder Garage.vrm') }}");
-      await viewer.loadVrm("{{ url_for('static', filename='vrm/AvatarSample_B.vrm') }}");
+      // await viewer.loadVrm("/vrm/Person Game Builder Garage.vrm'");
+      await viewer.loadVrm("/vrm/AvatarSample_B.vrm");
       
 
       viewer.model.emoteController.playEmotion("neutral");
@@ -58,13 +53,13 @@
       socket.on('set_animation', function (message) {
         console.log('Received message' + JSON.stringify(message))
         const receivedAnimation = message.animation;
-        const animationPath = "/static/animations/"
+        const animationPath = "/animations/"
         viewer.model.loadAnimation(`${animationPath}${receivedAnimation}.fbx`);
       });
 
       socket.on('set_audio', function (message) {
         console.log('Received message' + JSON.stringify(message))
-        const audio_url = message.audio_url;
+        const audio_url = message.audioUrl;
         const volume = 4;
         const expression = "happy";
         const speakingConfig = { expression: expression, volume: volume };
