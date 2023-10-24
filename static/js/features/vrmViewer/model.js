@@ -77,14 +77,36 @@ export class Model {
         clip = await loadMixamoAnimation(input, vrm);
       }
     }
+
     const action = mixer.clipAction(clip);
-    this.mixer.stopAllAction()
+    
+    if (this._currentAnimation != null) {
+      this.fadeToAction(this._currentAnimation, action, 2);
+    } else {
+      action.play();
+    }
 
+    this._currentAnimation = action;
+
+    // this.mixer.stopAllAction()
     // action.reset();
+    // action.play();
+  }
 
 
+  fadeToAction( fromAction, toAction, duration ) {
 
-    action.play();
+    if (fromAction != null) {
+      fromAction.fadeOut( duration );
+    }
+    
+    toAction
+      .reset()
+      .setEffectiveTimeScale( 1 )
+      .setEffectiveWeight( 1 )
+      .fadeIn( duration )
+      .play();
+
   }
 
   /**
