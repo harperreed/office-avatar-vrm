@@ -37,6 +37,9 @@ app.use(morgan('combined', {
   }
 }));
 
+const SERVER_ADDRESS = process.env.SERVER_ADDRESS || '127.0.0.1';
+const SERVER_PORT = parseInt(process.env.SERVER_PORT || 8765);
+
 const server = require('http').createServer(app);
 const io = socketIO(server);
 
@@ -184,4 +187,6 @@ app.get('/', (req, res) => {
 
 
 
-server.listen(8765, () => { logger.info(`Server running`); });
+server.listen(SERVER_PORT, SERVER_ADDRESS, () => {
+  logger.info(`Server running at http://${SERVER_ADDRESS}:${SERVER_PORT}/`);
+});

@@ -1,6 +1,6 @@
 version: '3'
 services:
-  your-node-app:
+  office-avatar-vrm:
     build: .
     ports:
       - "3000:3000"
