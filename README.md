@@ -1,84 +1,55 @@
 # Office Avatar (using VRM files)
 ![image](https://github.com/harperreed/office-avatar-vrm/assets/18504/acdcd1ac-eb71-458c-8369-78900208920a)
 
-This web application allows you to control an animated Neko Girl avatar using APIs, MQTT, and WebSockets. The application is designed to be integrated with notification systems like Home Assistant.
+## Overview
 
-## Features
+NekoGirl Office Bot is a Node.js server designed to manage and control a virtual character's state (emotion, animation, audio) using API endpoints and MQTT subscriptions. It leverages the NekoGirlStateMachine class for managing the character's state and emits relevant information to connected clients via Socket.io.
 
-- Change emotions and animations via a RESTful API
-- Synchronize avatar state in real-time with WebSockets
-- Integrate with other services through MQTT
-- Automatic state reset after a period of inactivity
-- Dockerized for easy deployment
+## Prerequisites
 
-## Dependencies
-
+- Node.js v20.8.1 or later
+- MQTT broker
 - Uses [ChatVRM-js](https://github.com/josephrocca/ChatVRM-js), a JavaScript conversion/adaptation of parts of the ChatVRM (TypeScript), for the VRM viewer features.
 
-## Requirements
+## Installation
 
-- Python 3.9
-- Docker and Docker Compose
+1. Clone the repository.
+2. Run `npm install` to install the required packages.
+3. Create a `.env` file in the project directory and specify the following variables:
+   ```
+   MQTT_BROKER=your_mqtt_broker_address
+   MQTT_PORT=your_mqtt_port
+   MQTT_TOPIC=avatar/#
+   DEBUG=true_or_false
+   ```
 
-## Quick Start
+## Running the Server
 
-### Clone the Repository
+Run `node app.js` to start the server. The server will listen on port 8765.
 
-```bash
-git clone https://github.com/harperreed/office-avatar-vrm
-cd office-avatar-vrm
-```
+## API Endpoints
 
-### Set up Environment Variables
+- `POST /api/emotion`: Sets the emotion of the character.
+- `POST /api/animation`: Sets the animation of the character.
+- `POST /api/audio`: Sets the audio URL for the character.
+- `POST /api/reload`: Reloads the character state.
 
-Create a `.env` file in the root directory and populate it with necessary environment variables, like MQTT broker details.
+## MQTT Topics
 
-### Build and Run with Docker Compose
+The server subscribes to the following MQTT topics:
 
-```bash
-docker-compose up --build
-```
-
-Your application will be available at `http://localhost:5000`.
-
-### API Endpoints
-
-- Set Emotion: `POST /api/emotion`
-- Set Animation: `POST /api/animation`
-
-### MQTT Topics
-
-- Emotion: `avatar/emotion`
-- Animation: `avatar/animation`
+- `avatar/emotion`: Sets the emotion of the character.
+- `avatar/animation`: Sets the animation of the character.
+- `avatar/audio`: Sets the audio of the character.
 
 ## Development
 
-### Running Locally
+To reload the server on file changes, you can use tools like `nodemon`.
 
-If you prefer to run the app locally for development, set up a Python virtual environment and install dependencies:
+## Logging
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-Run the app:
-
-```bash
-python main.py
-```
-
-## Integrations
-
-- Designed for compatibility with notification systems like Home Assistant.
+Winston and Morgan are recommended for comprehensive logging.
 
 ## License
 
-This project is licensed under the MIT License.
-
----
-
-Feel free to adjust the README as necessary!
-
-
+This project is licensed under the MIT License. See the `LICENSE` file for details.

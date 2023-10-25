@@ -9,10 +9,21 @@
       padding: 0;
       background: #000;
     }
+    .subtitle {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 24px;
+    }
   </style>
 </head>
 
 <body>
+  <div id="subtitles" class="subtitle">hi</div>
+
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       // Your code here
@@ -45,6 +56,7 @@
       // Listen for messages from server
       socket.on('set_emotion', function (message) {
         console.log('Received message' + JSON.stringify(message))
+        setSubtitle(`Emotion: ${message.emotion}`);
         const receivedEmotion = message.emotion;
         viewer.model.emoteController.playEmotion(receivedEmotion);
       });
@@ -95,6 +107,18 @@
       // let arrayBuffer = await fetch("https://cdn.jsdelivr.net/gh/josephrocca/ChatVRM-js@v0.0.22/OpenCharacters/dummy-audio/3.mp3").then(r => r.arrayBuffer());
       // await viewer.model.speak(arrayBuffer, {expression:"happy", volume:10});
     });
+
+    // Set the subtitle
+function setSubtitle(text) {
+  const subtitleDiv = document.getElementById('subtitles');
+  subtitleDiv.innerHTML = text;
+  setTimeout(clearSubtitle, 5000);
+}
+
+// Clear the subtitle
+function clearSubtitle() {
+  setSubtitle('');
+}
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
