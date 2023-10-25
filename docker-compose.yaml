@@ -1,6 +1,13 @@
 version: '3'
 services:
-  office-avatar-vrm:
+  app:
     build: .
     ports:
-      - "3000:3000"
+      - "${SERVER_PORT}:8765"
+    environment:
+      - DEBUG=${DEBUG}
+      - MQTT_BROKER=${MQTT_BROKER}
+      - MQTT_PORT=${MQTT_PORT}
+      - MQTT_TOPIC=${MQTT_TOPIC}
+      - SERVER_ADDRESS=${SERVER_ADDRESS}
+      - SERVER_PORT=${SERVER_PORT}

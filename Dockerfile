@@ -1,15 +1,20 @@
-# Use an official Node runtime as base image
-FROM node:16-alpine
+# Use Node.js LTS version
+FROM node:lts
 
-# Set the working directory
+# Create and change to the app directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
+# Copy package*.json for installing dependencies
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# Bundle app source
+# Copy the local source files to the container
 COPY . .
 
-# Set entry point
-CMD [ "node", "app.js" ]
+# Expose the port the app will run on
+EXPOSE 8765
+
+# Run the application
+CMD [ "npm", "start" ]
