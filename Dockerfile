@@ -1,18 +1,15 @@
-# Use the official Python image from Docker Hub
-FROM python:3.9-slim
+# Use an official Node runtime as base image
+FROM node:16-alpine
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Install app dependencies
+COPY package*.json ./
+RUN npm install
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the code into the container
+# Bundle app source
 COPY . .
 
-# Set the command to run your app
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--log-level", "info"]
-
+# Set entry point
+CMD [ "node", "app.js" ]

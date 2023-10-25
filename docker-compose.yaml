@@ -1,11 +1,6 @@
-version: '3.7'
+version: '3'
 services:
-  web:
+  your-node-app:
     build: .
     ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=development
-    volumes:
-      - .:/app
-
+      - "3000:3000"
