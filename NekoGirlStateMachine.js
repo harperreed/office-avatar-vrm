@@ -90,7 +90,7 @@ class NekoGirlStateMachine extends EventEmitter {
   }
 
   resetActivityTimer() {
-    if (this.resetTimer) clearTimeout(this.resetTimer);
+    if (this.resetTimer) {clearTimeout(this.resetTimer);}
     this.resetTimer = setTimeout(
       () => this.resetToNeutral(),
       this.activityTimeout * 1000,
