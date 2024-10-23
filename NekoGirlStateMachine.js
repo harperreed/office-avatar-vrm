@@ -1,33 +1,60 @@
 const EventEmitter = require('events');
 
 class Emotion {
-  // Define enum-like properties
-  static NEUTRAL = 'neutral';
-  static HAPPY = 'happy';
-  static NEUTRAL = "neutral"
-  static HAPPY = "happy"
-  static SAD = "sad"
-  static ANGRY = "angry"
-  static SURPRISED = "surprised"
+  static get NEUTRAL() {
+    return 'neutral';
+  }
+  static get HAPPY() {
+    return 'happy';
+  }
+  static get SAD() {
+    return 'sad';
+  }
+  static get ANGRY() {
+    return 'angry';
+  }
+  static get SURPRISED() {
+    return 'surprised';
+  }
 }
 
 class Animation {
-  // Define enum-like properties
-  static NONE = 'none';
-  static DANCING = 'silly_dancing';
-  static ANGRY = 'angry';
-  static NEUTRAL = 'neutral';
-  static LOOK_LEFT = 'look_left';
-  static LOOK_RIGHT = 'look_right';
+  static get NONE() {
+    return 'none';
+  }
+  static get DANCING() {
+    return 'silly_dancing';
+  }
+  static get ANGRY() {
+    return 'angry';
+  }
+  static get NEUTRAL() {
+    return 'neutral';
+  }
+  static get LOOK_LEFT() {
+    return 'look_left';
+  }
+  static get LOOK_RIGHT() {
+    return 'look_right';
+  }
 }
 
 class LookDirections {
-  // Define enum-like properties
-  static FORWARD = 'forward';
-  static UP = 'up';
-  static DOWN = 'down';
-  static LEFT = 'left';
-  static RIGHT = 'right';
+  static get FORWARD() {
+    return 'forward';
+  }
+  static get UP() {
+    return 'up';
+  }
+  static get DOWN() {
+    return 'down';
+  }
+  static get LEFT() {
+    return 'left';
+  }
+  static get RIGHT() {
+    return 'right';
+  }
 }
 
 class NekoGirlStateMachine extends EventEmitter {
@@ -63,18 +90,23 @@ class NekoGirlStateMachine extends EventEmitter {
   }
 
   resetActivityTimer() {
-    if (this.resetTimer) clearTimeout(this.resetTimer);
-    this.resetTimer = setTimeout(() => this.resetToNeutral(), this.activityTimeout * 1000);
+    if (this.resetTimer) {clearTimeout(this.resetTimer);}
+    this.resetTimer = setTimeout(
+      () => this.resetToNeutral(),
+      this.activityTimeout * 1000,
+    );
   }
 
   resetToNeutral() {
     this.currentEmotion = Emotion.NEUTRAL;
     this.currentAnimation = Animation.NONE;
     this.currentAudio = null;
-    this.emit('state_reset', { emotion: this.currentEmotion, animation: this.currentAnimation });
+    this.emit('state_reset', {
+      emotion: this.currentEmotion,
+      animation: this.currentAnimation,
+    });
     this.logger.info('Reset to neutral due to inactivity');
   }
 }
 
-
-module.exports = { NekoGirlStateMachine , Emotion, Animation, LookDirections };
+module.exports = { NekoGirlStateMachine, Emotion, Animation, LookDirections };
