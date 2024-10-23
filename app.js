@@ -1,9 +1,9 @@
 const express = require('express');
 const socketIO = require('socket.io');
 const mqtt = require('mqtt');
-const dotenv = require('dotenv');
 const morgan = require('morgan');
 const winston = require('winston');
+const config = require('./config');
 
 const logger = winston.createLogger({
   format: winston.format.json(),
@@ -21,7 +21,6 @@ const {
   Emotion,
   Animation,
 } = require('./NekoGirlStateMachine');
-dotenv.config();
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -39,17 +38,17 @@ app.use(
   }),
 );
 
-const SERVER_ADDRESS = process.env.SERVER_ADDRESS || '127.0.0.1';
-const SERVER_PORT = parseInt(process.env.SERVER_PORT || 8765);
+const SERVER_ADDRESS = config.SERVER_ADDRESS;
+const SERVER_PORT = config.SERVER_PORT;
 
 const server = require('http').createServer(app);
 const io = socketIO(server);
 
 const nekoStateMachine = new NekoGirlStateMachine(30);
 
-const MQTT_BROKER = process.env.MQTT_BROKER;
-const MQTT_PORT = parseInt(process.env.MQTT_PORT);
-const MQTT_TOPIC = process.env.MQTT_TOPIC || 'avatar/#';
+const MQTT_BROKER = config.MQTT_BROKER;
+const MQTT_PORT = config.MQTT_PORT;
+const MQTT_TOPIC = config.MQTT_TOPIC;
 
 // Helper function to get enum values
 const getEnumValues = (enumClass) => {
