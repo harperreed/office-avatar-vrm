@@ -49,7 +49,7 @@ const DEBUG = process.env.DEBUG || false;
 
 const MQTT_BROKER = process.env.MQTT_BROKER;
 const MQTT_PORT = parseInt(process.env.MQTT_PORT);
-const MQTT_TOPIC = process.env.MQTT_TOPIC || "avatar/#";
+const MQTT_TOPIC = process.env.MQTT_TOPIC || 'avatar/#';
 
 
 
@@ -99,42 +99,42 @@ client.on('message', (topic, message) => {
   try {
     payload = JSON.parse(message.toString());
   } catch (e) {
-    logger.error("Invalid JSON in MQTT message");
+    logger.error('Invalid JSON in MQTT message');
     return;
   }
 
 
   switch (topic) {
-    case 'avatar/emotion':
-      const emotion = payload.emotion;
-      const isValidEmotion = Object.values(Emotion).includes(emotion);
-      if (isValidEmotion) {
-        nekoStateMachine.setEmotion(emotion);
-      } else {
-        logger.warn("Invalid emotion in MQTT message");
-      }
-      break;
+  case 'avatar/emotion':
+    const emotion = payload.emotion;
+    const isValidEmotion = Object.values(Emotion).includes(emotion);
+    if (isValidEmotion) {
+      nekoStateMachine.setEmotion(emotion);
+    } else {
+      logger.warn('Invalid emotion in MQTT message');
+    }
+    break;
 
-    case 'avatar/animation':
-      // Handle animation
-      const animation = payload.animation;
-      const isValidAnimation = Object.values(Animation).includes(animation);
-      if (isValidAnimation) {
-        nekoStateMachine.setAnimation(animation);
-      } else {
-        logger.warn("Invalid animation in MQTT message");
-      }
+  case 'avatar/animation':
+    // Handle animation
+    const animation = payload.animation;
+    const isValidAnimation = Object.values(Animation).includes(animation);
+    if (isValidAnimation) {
+      nekoStateMachine.setAnimation(animation);
+    } else {
+      logger.warn('Invalid animation in MQTT message');
+    }
 
-      break;
+    break;
 
-    case 'avatar/audio':
-      // Handle audio
-      const audioUrl = payload.url;
-      nekoStateMachine.setAudio(audioUrl);
-      break;
+  case 'avatar/audio':
+    // Handle audio
+    const audioUrl = payload.url;
+    nekoStateMachine.setAudio(audioUrl);
+    break;
 
-    default:
-      logger.warn("Unknown MQTT topic");
+  default:
+    logger.warn('Unknown MQTT topic');
   }
 });
 
@@ -142,33 +142,33 @@ client.on('message', (topic, message) => {
 // API Endpoints
 app.post('/api/emotion', (req, res) => {
   const emotion = req.body.emotion;
-  logger.info(`Setting emotion to ${emotion}`)
+  logger.info(`Setting emotion to ${emotion}`);
   const isValidEmotion = Object.values(Emotion).includes(emotion);
   if (isValidEmotion) {
     nekoStateMachine.setEmotion(emotion);
     res.sendStatus(200);
   } else {
-    res.status(400).send("Invalid emotion");
+    res.status(400).send('Invalid emotion');
   }
 });
 
 app.post('/api/animation', (req, res) => {
   const animation = req.body.animation;
-  logger.info(`Setting animation to ${animation}`)
+  logger.info(`Setting animation to ${animation}`);
   const isValidAnimation = Object.values(Animation).includes(animation);
-  console.log(isValidAnimation)
+  console.log(isValidAnimation);
   if (isValidAnimation) {
     nekoStateMachine.setAnimation(animation);
     
     res.sendStatus(200);
   } else {
-    res.status(400).send("Invalid animation");
+    res.status(400).send('Invalid animation');
   }
 });
 
 app.post('/api/audio', (req, res) => {
   const audioUrl = req.body.audioUrl;
-  logger.info(`Setting audio to ${audioUrl}`)
+  logger.info(`Setting audio to ${audioUrl}`);
   nekoStateMachine.setAudio(audioUrl);
   io.emit('set_audio', { audioUrl });
   res.sendStatus(200);
@@ -181,7 +181,7 @@ app.post('/api/reload', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  const username = "Harper"; // For example, get this from database or some logic
+  const username = 'Harper'; // For example, get this from database or some logic
   res.render('index', { username });
 });
 

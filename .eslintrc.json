@@ -9,7 +9,7 @@
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "ignores": ["static/*"]
+  "ignorePatterns": ["static/"],
   "rules": {
     "indent": ["error", 2],
     "linebreak-style": ["error", "unix"],
