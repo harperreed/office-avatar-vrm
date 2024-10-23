@@ -3,7 +3,7 @@
 
 ## Overview
 
-NekoGirl Office Bot is a Node.js server designed to manage and control a virtual character's state (emotion, animation, audio) using API endpoints and MQTT subscriptions. It leverages the NekoGirlStateMachine class for managing the character's state and emits relevant information to connected clients via Socket.io.
+Office Avatar is a Node.js server designed to manage and control a virtual character's state (emotion, animation, audio) using API endpoints and MQTT subscriptions. It leverages the AvatarStateMachine class for managing the character's state and emits relevant information to connected clients via Socket.io.
 
 ## Prerequisites
 
@@ -41,6 +41,14 @@ The server subscribes to the following MQTT topics:
 - `avatar/emotion`: Sets the emotion of the character.
 - `avatar/animation`: Sets the animation of the character.
 - `avatar/audio`: Sets the audio of the character.
+
+## Configuration System
+
+The application uses a centralized configuration system located in `config/index.js`. This system manages all configurable values and validates environment variables using `joi`.
+
+## State Management
+
+The application uses a type-safe state machine class `AvatarStateMachine` with proper event handling and clean state transitions. The state machine ensures robust state management and validation for all state changes.
 
 ## Development
 
