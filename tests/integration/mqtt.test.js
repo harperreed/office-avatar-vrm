@@ -37,13 +37,18 @@ jest.mock("../../NekoGirlStateMachine", () => {
     };
 });
 
-// Mock external dependencies
+// Create a mock MQTT client that extends EventEmitter
+class MockMqttClient extends EventEmitter {
+    constructor() {
+        super();
+        this.subscribe = jest.fn();
+        this.end = jest.fn();
+    }
+}
+
+// Mock mqtt module
 jest.mock("mqtt", () => ({
-    connect: jest.fn(() => ({
-        on: jest.fn(),
-        subscribe: jest.fn(),
-        end: jest.fn(),
-    })),
+    connect: jest.fn(() => new MockMqttClient()),
 }));
 
 jest.mock("winston", () => ({
@@ -61,75 +66,34 @@ describe("Integration Tests for MQTT in app.js", () => {
     let app;
     let server;
     let mqttClient;
+    let nekoStateMachine;
 
     beforeAll(() => {
-        // Set max listeners to prevent memory leak warnings
         EventEmitter.defaultMaxListeners = 20;
     });
 
     beforeEach(() => {
-        // Create fresh Express app
         app = express();
         app.use(express.json());
 
-        // Initialize NekoGirlStateMachine
-        const nekoStateMachine = new NekoGirlStateMachine(30);
-
-        // Set up routes
-        app.post("/api/emotion", (req, res) => {
-            const emotion = req.body.emotion;
-            const isValidEmotion = Object.values(Emotion).includes(emotion);
-            if (isValidEmotion) {
-                nekoStateMachine.setEmotion(emotion);
-                res.sendStatus(200);
-            } else {
-                res.status(400).send("Invalid emotion");
-            }
-        });
-
-        app.post("/api/animation", (req, res) => {
-            const animation = req.body.animation;
-            const isValidAnimation =
-                Object.values(Animation).includes(animation);
-            if (isValidAnimation) {
-                nekoStateMachine.setAnimation(animation);
-                res.sendStatus(200);
-            } else {
-                res.status(400).send("Invalid animation");
-            }
-        });
-
-        app.post("/api/audio", (req, res) => {
-            const audioUrl = req.body.audioUrl;
-            nekoStateMachine.setAudio(audioUrl);
-            res.sendStatus(200);
-        });
-
-        app.post("/api/reload", (req, res) => {
-            res.sendStatus(200);
-        });
+        // Create a new instance of NekoGirlStateMachine
+        nekoStateMachine = new NekoGirlStateMachine(30);
 
         // Set up server
         server = http.createServer(app);
 
-        // Set up MQTT client
+        // Create MQTT client
         mqttClient = mqtt.connect("mqtt://localhost:1883");
 
-        mqttClient.on("connect", () => {
-            mqttClient.subscribe("avatar/#", (err) => {
-                if (err) {
-                    console.error("Subscription error:", err);
-                }
-            });
-        });
-
+        // Set up MQTT message handling
         mqttClient.on("message", (topic, message) => {
             const payload = JSON.parse(message.toString());
 
             switch (topic) {
                 case "avatar/emotion":
                     const emotion = payload.emotion;
-                    const isValidEmotion = Object.values(Emotion).includes(emotion);
+                    const isValidEmotion =
+                        Object.values(Emotion).includes(emotion);
                     if (isValidEmotion) {
                         nekoStateMachine.setEmotion(emotion);
                     }
@@ -137,7 +101,8 @@ describe("Integration Tests for MQTT in app.js", () => {
 
                 case "avatar/animation":
                     const animation = payload.animation;
-                    const isValidAnimation = Object.values(Animation).includes(animation);
+                    const isValidAnimation =
+                        Object.values(Animation).includes(animation);
                     if (isValidAnimation) {
                         nekoStateMachine.setAnimation(animation);
                     }
@@ -147,9 +112,6 @@ describe("Integration Tests for MQTT in app.js", () => {
                     const audioUrl = payload.url;
                     nekoStateMachine.setAudio(audioUrl);
                     break;
-
-                default:
-                    console.warn("Unknown MQTT topic");
             }
         });
     });
@@ -161,26 +123,67 @@ describe("Integration Tests for MQTT in app.js", () => {
     });
 
     afterAll(() => {
-        EventEmitter.defaultMaxListeners = 10; // Reset to default
+        EventEmitter.defaultMaxListeners = 10;
     });
 
     describe("MQTT Functionality", () => {
         it("should handle MQTT messages for emotion", () => {
-            const message = JSON.stringify({ emotion: "happy" });
-            mqttClient.emit("message", "avatar/emotion", message);
+            // Trigger a message event directly on the MQTT client
+            mqttClient.emit(
+                "message",
+                "avatar/emotion",
+                Buffer.from(JSON.stringify({ emotion: "happy" })),
+            );
+
             expect(nekoStateMachine.setEmotion).toHaveBeenCalledWith("happy");
         });
 
         it("should handle MQTT messages for animation", () => {
-            const message = JSON.stringify({ animation: "dancing" });
-            mqttClient.emit("message", "avatar/animation", message);
-            expect(nekoStateMachine.setAnimation).toHaveBeenCalledWith("dancing");
+            // Trigger a message event directly on the MQTT client
+            mqttClient.emit(
+                "message",
+                "avatar/animation",
+                Buffer.from(JSON.stringify({ animation: "silly_dancing" })),
+            );
+
+            expect(nekoStateMachine.setAnimation).toHaveBeenCalledWith(
+                "silly_dancing",
+            );
         });
 
         it("should handle MQTT messages for audio", () => {
-            const message = JSON.stringify({ url: "http://example.com/audio.mp3" });
-            mqttClient.emit("message", "avatar/audio", message);
-            expect(nekoStateMachine.setAudio).toHaveBeenCalledWith("http://example.com/audio.mp3");
+            // Trigger a message event directly on the MQTT client
+            mqttClient.emit(
+                "message",
+                "avatar/audio",
+                Buffer.from(
+                    JSON.stringify({ url: "http://example.com/audio.mp3" }),
+                ),
+            );
+
+            expect(nekoStateMachine.setAudio).toHaveBeenCalledWith(
+                "http://example.com/audio.mp3",
+            );
+        });
+
+        it("should ignore invalid emotions", () => {
+            mqttClient.emit(
+                "message",
+                "avatar/emotion",
+                Buffer.from(JSON.stringify({ emotion: "invalid_emotion" })),
+            );
+
+            expect(nekoStateMachine.setEmotion).not.toHaveBeenCalled();
+        });
+
+        it("should ignore invalid animations", () => {
+            mqttClient.emit(
+                "message",
+                "avatar/animation",
+                Buffer.from(JSON.stringify({ animation: "invalid_animation" })),
+            );
+
+            expect(nekoStateMachine.setAnimation).not.toHaveBeenCalled();
         });
     });
 });

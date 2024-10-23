@@ -6,7 +6,7 @@ const {
     Animation,
 } = require("../../NekoGirlStateMachine");
 const { EventEmitter } = require("events");
-const socketIO = require("socket.io");
+const { Server } = require("socket.io");
 const http = require("http");
 
 // Mock the NekoGirlStateMachine
@@ -37,13 +37,52 @@ jest.mock("../../NekoGirlStateMachine", () => {
     };
 });
 
-// Mock external dependencies
+// Create MockSocket class
+class MockSocket {
+    constructor() {
+        this.handlers = {};
+        this.emit = jest.fn();
+    }
+
+    on(event, handler) {
+        this.handlers[event] = handler;
+    }
+
+    // Method to simulate receiving an event
+    simulateEvent(event, data) {
+        if (this.handlers[event]) {
+            this.handlers[event](data);
+        }
+    }
+}
+
+// Create MockIO class
+class MockIO {
+    constructor() {
+        this.handlers = {};
+        this.emit = jest.fn();
+        this.sockets = {
+            emit: jest.fn(),
+        };
+    }
+
+    on(event, handler) {
+        this.handlers[event] = handler;
+    }
+
+    // Method to simulate a connection
+    simulateConnection() {
+        const socket = new MockSocket();
+        if (this.handlers.connection) {
+            this.handlers.connection(socket);
+        }
+        return socket;
+    }
+}
+
+// Mock socket.io
 jest.mock("socket.io", () => ({
-    Server: jest.fn(() => ({
-        on: jest.fn(),
-        emit: jest.fn(),
-        close: jest.fn(),
-    })),
+    Server: jest.fn(() => new MockIO()),
 }));
 
 jest.mock("winston", () => ({
@@ -61,57 +100,20 @@ describe("Integration Tests for Socket.IO in app.js", () => {
     let app;
     let server;
     let io;
+    let nekoStateMachine;
+    let socket;
 
     beforeAll(() => {
-        // Set max listeners to prevent memory leak warnings
         EventEmitter.defaultMaxListeners = 20;
     });
 
     beforeEach(() => {
-        // Create fresh Express app
         app = express();
         app.use(express.json());
 
-        // Initialize NekoGirlStateMachine
-        const nekoStateMachine = new NekoGirlStateMachine(30);
-
-        // Set up routes
-        app.post("/api/emotion", (req, res) => {
-            const emotion = req.body.emotion;
-            const isValidEmotion = Object.values(Emotion).includes(emotion);
-            if (isValidEmotion) {
-                nekoStateMachine.setEmotion(emotion);
-                res.sendStatus(200);
-            } else {
-                res.status(400).send("Invalid emotion");
-            }
-        });
-
-        app.post("/api/animation", (req, res) => {
-            const animation = req.body.animation;
-            const isValidAnimation =
-                Object.values(Animation).includes(animation);
-            if (isValidAnimation) {
-                nekoStateMachine.setAnimation(animation);
-                res.sendStatus(200);
-            } else {
-                res.status(400).send("Invalid animation");
-            }
-        });
-
-        app.post("/api/audio", (req, res) => {
-            const audioUrl = req.body.audioUrl;
-            nekoStateMachine.setAudio(audioUrl);
-            res.sendStatus(200);
-        });
-
-        app.post("/api/reload", (req, res) => {
-            res.sendStatus(200);
-        });
-
-        // Set up server and socket.io
+        nekoStateMachine = new NekoGirlStateMachine(30);
         server = http.createServer(app);
-        io = socketIO(server);
+        io = new Server(server);
 
         io.on("connection", (socket) => {
             socket.on("set_emotion", (data) => {
@@ -125,7 +127,8 @@ describe("Integration Tests for Socket.IO in app.js", () => {
 
             socket.on("set_animation", (data) => {
                 const animation = data.animation;
-                const isValidAnimation = Object.values(Animation).includes(animation);
+                const isValidAnimation =
+                    Object.values(Animation).includes(animation);
                 if (isValidAnimation) {
                     nekoStateMachine.setAnimation(animation);
                     io.emit("set_animation", { animation });
@@ -142,6 +145,9 @@ describe("Integration Tests for Socket.IO in app.js", () => {
                 io.emit("reload_page");
             });
         });
+
+        // Get a mock socket for testing
+        socket = io.simulateConnection();
     });
 
     afterEach(() => {
@@ -150,83 +156,65 @@ describe("Integration Tests for Socket.IO in app.js", () => {
     });
 
     afterAll(() => {
-        EventEmitter.defaultMaxListeners = 10; // Reset to default
+        EventEmitter.defaultMaxListeners = 10;
     });
 
     describe("Socket.IO Events", () => {
-        it("should handle socket.io events for emotion", (done) => {
-            const socket = {
-                on: jest.fn((event, callback) => {
-                    if (event === "set_emotion") {
-                        callback({ emotion: "happy" });
-                    }
-                }),
-                emit: jest.fn(),
-            };
+        it("should handle socket.io events for emotion", () => {
+            socket.simulateEvent("set_emotion", { emotion: "happy" });
 
-            io.emit("connection", socket);
-
-            setImmediate(() => {
-                expect(nekoStateMachine.setEmotion).toHaveBeenCalledWith("happy");
-                expect(io.emit).toHaveBeenCalledWith("set_emotion", { emotion: "happy" });
-                done();
+            expect(nekoStateMachine.setEmotion).toHaveBeenCalledWith("happy");
+            expect(io.emit).toHaveBeenCalledWith("set_emotion", {
+                emotion: "happy",
             });
         });
 
-        it("should handle socket.io events for animation", (done) => {
-            const socket = {
-                on: jest.fn((event, callback) => {
-                    if (event === "set_animation") {
-                        callback({ animation: "dancing" });
-                    }
-                }),
-                emit: jest.fn(),
-            };
+        it("should handle socket.io events for animation", () => {
+            socket.simulateEvent("set_animation", {
+                animation: "silly_dancing",
+            });
 
-            io.emit("connection", socket);
-
-            setImmediate(() => {
-                expect(nekoStateMachine.setAnimation).toHaveBeenCalledWith("dancing");
-                expect(io.emit).toHaveBeenCalledWith("set_animation", { animation: "dancing" });
-                done();
+            expect(nekoStateMachine.setAnimation).toHaveBeenCalledWith(
+                "silly_dancing",
+            );
+            expect(io.emit).toHaveBeenCalledWith("set_animation", {
+                animation: "silly_dancing",
             });
         });
 
-        it("should handle socket.io events for audio", (done) => {
-            const socket = {
-                on: jest.fn((event, callback) => {
-                    if (event === "set_audio") {
-                        callback({ audioUrl: "http://example.com/audio.mp3" });
-                    }
-                }),
-                emit: jest.fn(),
-            };
+        it("should handle socket.io events for audio", () => {
+            socket.simulateEvent("set_audio", {
+                audioUrl: "http://example.com/audio.mp3",
+            });
 
-            io.emit("connection", socket);
-
-            setImmediate(() => {
-                expect(nekoStateMachine.setAudio).toHaveBeenCalledWith("http://example.com/audio.mp3");
-                expect(io.emit).toHaveBeenCalledWith("set_audio", { audioUrl: "http://example.com/audio.mp3" });
-                done();
+            expect(nekoStateMachine.setAudio).toHaveBeenCalledWith(
+                "http://example.com/audio.mp3",
+            );
+            expect(io.emit).toHaveBeenCalledWith("set_audio", {
+                audioUrl: "http://example.com/audio.mp3",
             });
         });
 
-        it("should handle socket.io events for reload", (done) => {
-            const socket = {
-                on: jest.fn((event, callback) => {
-                    if (event === "reload_page") {
-                        callback();
-                    }
-                }),
-                emit: jest.fn(),
-            };
+        it("should handle socket.io events for reload", () => {
+            socket.simulateEvent("reload_page");
 
-            io.emit("connection", socket);
+            expect(io.emit).toHaveBeenCalledWith("reload_page");
+        });
 
-            setImmediate(() => {
-                expect(io.emit).toHaveBeenCalledWith("reload_page");
-                done();
+        it("should not emit events for invalid emotions", () => {
+            socket.simulateEvent("set_emotion", { emotion: "invalid_emotion" });
+
+            expect(nekoStateMachine.setEmotion).not.toHaveBeenCalled();
+            expect(io.emit).not.toHaveBeenCalled();
+        });
+
+        it("should not emit events for invalid animations", () => {
+            socket.simulateEvent("set_animation", {
+                animation: "invalid_animation",
             });
+
+            expect(nekoStateMachine.setAnimation).not.toHaveBeenCalled();
+            expect(io.emit).not.toHaveBeenCalled();
         });
     });
 });
