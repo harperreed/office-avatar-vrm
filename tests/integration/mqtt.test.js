@@ -1,4 +1,3 @@
-const request = require('supertest');
 const express = require('express');
 const {
   NekoGirlStateMachine,
@@ -90,7 +89,7 @@ describe('Integration Tests for MQTT in app.js', () => {
       const payload = JSON.parse(message.toString());
 
       switch (topic) {
-      case 'avatar/emotion':
+      case 'avatar/emotion': {
         const emotion = payload.emotion;
         const isValidEmotion =
                         Object.values(Emotion).includes(emotion);
@@ -98,8 +97,8 @@ describe('Integration Tests for MQTT in app.js', () => {
           nekoStateMachine.setEmotion(emotion);
         }
         break;
-
-      case 'avatar/animation':
+      }
+      case 'avatar/animation': {
         const animation = payload.animation;
         const isValidAnimation =
                         Object.values(Animation).includes(animation);
@@ -107,11 +106,12 @@ describe('Integration Tests for MQTT in app.js', () => {
           nekoStateMachine.setAnimation(animation);
         }
         break;
-
-      case 'avatar/audio':
+      }
+      case 'avatar/audio': {
         const audioUrl = payload.url;
         nekoStateMachine.setAudio(audioUrl);
         break;
+      }
       }
     });
   });

@@ -65,7 +65,6 @@ jest.mock('winston', () => ({
 
 describe('API Endpoints', () => {
   let app;
-  let server;
 
   beforeAll(() => {
     // Set max listeners to prevent memory leak warnings

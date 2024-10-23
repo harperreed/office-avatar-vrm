@@ -1,15 +1,13 @@
 const express = require('express');
 const socketIO = require('socket.io');
 const mqtt = require('mqtt');
-const uuid = require('uuid');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 const winston = require('winston');
 
 const logger = winston.createLogger({
-
   format: winston.format.json(),
-  transports: [new winston.transports.Console()]
+  transports: [new winston.transports.Console()],
 });
 
 const crypto = require('crypto');
@@ -18,8 +16,11 @@ const os = require('os');
 const machineInfo = os.hostname() + os.type() + os.release();
 const uniqueID = crypto.createHash('sha256').update(machineInfo).digest('hex');
 
-
-const { NekoGirlStateMachine, Emotion, Animation } = require('./NekoGirlStateMachine');
+const {
+  NekoGirlStateMachine,
+  Emotion,
+  Animation,
+} = require('./NekoGirlStateMachine');
 dotenv.config();
 
 const app = express();
@@ -27,15 +28,16 @@ app.set('view engine', 'ejs');
 app.use(express.static('static'));
 app.use(express.json());
 
-
 // Morgan writes logs to Winston
-app.use(morgan('combined', {
-  stream: {
-    write: (message) => {
-      logger.info(message.trim());
-    }
-  }
-}));
+app.use(
+  morgan('combined', {
+    stream: {
+      write: (message) => {
+        logger.info(message.trim());
+      },
+    },
+  }),
+);
 
 const SERVER_ADDRESS = process.env.SERVER_ADDRESS || '127.0.0.1';
 const SERVER_PORT = parseInt(process.env.SERVER_PORT || 8765);
@@ -43,15 +45,11 @@ const SERVER_PORT = parseInt(process.env.SERVER_PORT || 8765);
 const server = require('http').createServer(app);
 const io = socketIO(server);
 
-
 const nekoStateMachine = new NekoGirlStateMachine(30);
-const DEBUG = process.env.DEBUG || false;
 
 const MQTT_BROKER = process.env.MQTT_BROKER;
 const MQTT_PORT = parseInt(process.env.MQTT_PORT);
 const MQTT_TOPIC = process.env.MQTT_TOPIC || 'avatar/#';
-
-
 
 // State Macgine
 
@@ -75,8 +73,10 @@ nekoStateMachine.on('audio_change', (data) => {
 
 // MQTT
 
-const client = mqtt.connect(`mqtt://${MQTT_BROKER}:${MQTT_PORT}`, { clientId: uniqueID });
-client.on('connect', () => { 
+const client = mqtt.connect(`mqtt://${MQTT_BROKER}:${MQTT_PORT}`, {
+  clientId: uniqueID,
+});
+client.on('connect', () => {
   logger.info(`MQTT: Connected to ${MQTT_BROKER}:${MQTT_PORT}`);
   client.subscribe(MQTT_TOPIC, (err) => {
     if (err) {
@@ -84,7 +84,7 @@ client.on('connect', () => {
     } else {
       console.log(`Subscribed to topic: ${MQTT_TOPIC}`);
     }
-  }); 
+  });
 });
 
 client.on('error', (error) => {
@@ -103,9 +103,8 @@ client.on('message', (topic, message) => {
     return;
   }
 
-
   switch (topic) {
-  case 'avatar/emotion':
+  case 'avatar/emotion': {
     const emotion = payload.emotion;
     const isValidEmotion = Object.values(Emotion).includes(emotion);
     if (isValidEmotion) {
@@ -114,11 +113,12 @@ client.on('message', (topic, message) => {
       logger.warn('Invalid emotion in MQTT message');
     }
     break;
-
-  case 'avatar/animation':
+  }
+  case 'avatar/animation': {
     // Handle animation
     const animation = payload.animation;
-    const isValidAnimation = Object.values(Animation).includes(animation);
+    const isValidAnimation =
+                Object.values(Animation).includes(animation);
     if (isValidAnimation) {
       nekoStateMachine.setAnimation(animation);
     } else {
@@ -126,18 +126,18 @@ client.on('message', (topic, message) => {
     }
 
     break;
-
-  case 'avatar/audio':
+  }
+  case 'avatar/audio': {
     // Handle audio
     const audioUrl = payload.url;
     nekoStateMachine.setAudio(audioUrl);
     break;
-
-  default:
+  }
+  default: {
     logger.warn('Unknown MQTT topic');
   }
+  }
 });
-
 
 // API Endpoints
 app.post('/api/emotion', (req, res) => {
@@ -159,7 +159,7 @@ app.post('/api/animation', (req, res) => {
   console.log(isValidAnimation);
   if (isValidAnimation) {
     nekoStateMachine.setAnimation(animation);
-    
+
     res.sendStatus(200);
   } else {
     res.status(400).send('Invalid animation');
@@ -184,8 +184,6 @@ app.get('/', (req, res) => {
   const username = 'Harper'; // For example, get this from database or some logic
   res.render('index', { username });
 });
-
-
 
 server.listen(SERVER_PORT, SERVER_ADDRESS, () => {
   logger.info(`Server running at http://${SERVER_ADDRESS}:${SERVER_PORT}/`);
